@@ -1,199 +1,230 @@
 let laporan = JSON.parse(localStorage.getItem("laporan")) || [];
 let dana = JSON.parse(localStorage.getItem("dana")) || [];
+let isLogin = false;
+
+/* SAVE */
+function saveData(){
+localStorage.setItem("laporan", JSON.stringify(laporan));
+localStorage.setItem("dana", JSON.stringify(dana));
+}
 
 /* NAV */
-function showPage(page){
+function showPage(page, event){
 
-["dashboard","laporan","dana"].forEach(id=>{
+["home","dashboard","lapor","data","dana","login"].forEach(id=>{
 document.getElementById(id).classList.add("hidden");
 });
 
 document.getElementById(page).classList.remove("hidden");
+
+/* active menu */
+if(event){
+document.querySelectorAll(".menu").forEach(m=>m.classList.remove("active"));
+event.target.classList.add("active");
+}
 }
 
-/* LOAD */
-renderLaporan();
-renderDana();
-updateDashboard();
+/* LOGIN */
+function login(){
+let u = username.value;
+let p = password.value;
 
-/* DASHBOARD */
-function updateDashboard(){
+if(u==="admin" && p==="123"){
+isLogin = true;
+showToast("Login berhasil");
+showPage("home");
+}else{
+showToast("Login gagal");
+}
+}
 
-document.getElementById("totalLaporan").innerText = laporan.length;
+/* LAPOR */
+function kirimLaporan(){
 
-document.getElementById("pendingCount").innerText =
-laporan.filter(l=>l.status==="Pending").length;
+let file = foto.files[0];
+let reader = new FileReader();
 
-document.getElementById("prosesCount").innerText =
-laporan.filter(l=>l.status==="Diproses").length;
+reader.onload = function(){
 
-document.getElementById("selesaiCount").innerText =let laporan = JSON.parse(localStorage.getItem("laporan")) || [];
-let dana = JSON.parse(localStorage.getItem("dana")) || [];
-
-/* NAV */
-function showPage(page){
-
-["dashboard","laporan","dana"].forEach(id=>{
-document.getElementById(id).classList.add("hidden");
+laporan.push({
+nama:nama.value,
+jenis:jenis.value,
+alamat:alamat.value,
+deskripsi:deskripsi.value,
+foto:reader.result,
+status:"Pending"
 });
 
-document.getElementById(page).classList.remove("hidden");
-}
-
-/* LOAD */
+saveData();
 renderLaporan();
-renderDana();
 updateDashboard();
+showToast("Laporan terkirim");
+};
 
-/* DASHBOARD */
-function updateDashboard(){
-
-document.getElementById("totalLaporan").innerText = laporan.length;
-
-document.getElementById("pendingCount").innerText =
-laporan.filter(l=>l.status==="Pending").length;
-
-document.getElementById("prosesCount").innerText =
-laporan.filter(l=>l.status==="Diproses").length;
-
-document.getElementById("selesaiCount").innerText =
-laporan.filter(l=>l.status==="Selesai").length;
-
-let total = dana.reduce((a,b)=>a + Number(b.jumlah),0);
-document.getElementById("totalDana").innerText = total.toLocaleString();
+reader.readAsDataURL(file);
 }
 
-/* LAPORAN */
+/* RENDER LAPOR */
 function renderLaporan(){
 
-let container = document.getElementById("listLaporan");
-container.innerHTML = "";
+listLaporan.innerHTML="";
 
 laporan.forEach((l,i)=>{
 
-container.innerHTML += `
+listLaporan.innerHTML += `
 <div class="card">
 <h3>${l.jenis}</h3>
 <p>${l.deskripsi}</p>
 
-<p><b>${l.status}</b></p>
-
-<button onclick="ubahStatus(${i})">Ubah Status</button>
-<button onclick="hapus(${i})">Hapus</button>
+<span onclick="gantiStatus(${i})">
+${l.status}
+</span>
 
 <img src="${l.foto}">
+
+<button onclick="hapusLaporan(${i})">Hapus</button>
+<button onclick="editLaporan(${i})">Edit</button>
 </div>
 `;
 });
 
-updateDashboard();
 }
 
 /* STATUS */
-function ubahStatus(i){
+function gantiStatus(i){
 
 if(laporan[i].status==="Pending") laporan[i].status="Diproses";
 else if(laporan[i].status==="Diproses") laporan[i].status="Selesai";
 else laporan[i].status="Pending";
 
-localStorage.setItem("laporan", JSON.stringify(laporan));
+saveData();
 renderLaporan();
+updateDashboard();
 }
 
 /* HAPUS */
-function hapus(i){
-
+function hapusLaporan(i){
 laporan.splice(i,1);
-localStorage.setItem("laporan", JSON.stringify(laporan));
+saveData();
 renderLaporan();
+updateDashboard();
+}
+
+/* EDIT */
+function editLaporan(i){
+let newText = prompt("Edit deskripsi:", laporan[i].deskripsi);
+if(newText){
+laporan[i].deskripsi=newText;
+saveData();
+renderLaporan();
+}
 }
 
 /* DANA */
+function tambahDana(){
+
+let file = buktiDana.files[0];
+let reader = new FileReader();
+
+reader.onload = function(){
+
+dana.push({
+judul:judulDana.value,
+jumlah:jumlahDana.value,
+bukti:reader.result
+});
+
+saveData();
+renderDana();
+updateDashboard();
+showToast("Dana masuk");
+};
+
+reader.readAsDataURL(file);
+}
+
+/* RENDER DANA */
 function renderDana(){
 
-let container = document.getElementById("listDana");
-container.innerHTML = "";
+listDana.innerHTML="";
 
-dana.forEach(d=>{
+dana.forEach((d,i)=>{
 
-container.innerHTML += `
+listDana.innerHTML += `
 <div class="card">
 <h3>${d.judul}</h3>
 <p>Rp ${Number(d.jumlah).toLocaleString()}</p>
 <img src="${d.bukti}">
+
+<button onclick="hapusDana(${i})">Hapus</button>
+
 </div>
 `;
 });
-
-updateDashboard();
-}
-laporan.filter(l=>l.status==="Selesai").length;
-
-let total = dana.reduce((a,b)=>a + Number(b.jumlah),0);
-document.getElementById("totalDana").innerText = total.toLocaleString();
 }
 
-/* LAPORAN */
-function renderLaporan(){
+/* DASHBOARD */
+function updateDashboard(){
 
-let container = document.getElementById("listLaporan");
-container.innerHTML = "";
+totalLaporan.innerText = laporan.length;
 
-laporan.forEach((l,i)=>{
+pendingCount.innerText = laporan.filter(l=>l.status==="Pending").length;
+prosesCount.innerText = laporan.filter(l=>l.status==="Diproses").length;
+selesaiCount.innerText = laporan.filter(l=>l.status==="Selesai").length;
 
-container.innerHTML += `
-<div class="card">
-<h3>${l.jenis}</h3>
-<p>${l.deskripsi}</p>
-
-<p><b>${l.status}</b></p>
-
-<button onclick="ubahStatus(${i})">Ubah Status</button>
-<button onclick="hapus(${i})">Hapus</button>
-
-<img src="${l.foto}">
-</div>
-`;
-});
-
-updateDashboard();
+let totalDana = dana.reduce((a,b)=>a + Number(b.jumlah),0);
+totalDana.innerText = totalDana.toLocaleString();
 }
 
-/* STATUS */
-function ubahStatus(i){
+/* TOAST */
+function showToast(msg){
+let t=document.getElementById("toast");
+t.innerText=msg;
+t.style.display="block";
+setTimeout(()=>t.style.display="none",2000);
+}
 
-if(laporan[i].status==="Pending") laporan[i].status="Diproses";
-else if(laporan[i].status==="Diproses") laporan[i].status="Selesai";
-else laporan[i].status="Pending";
-
-localStorage.setItem("laporan", JSON.stringify(laporan));
+/* INIT */
 renderLaporan();
-}
+renderDana();
+updateDashboard();
+function showPage(page, event){
 
-/* HAPUS */
-function hapus(i){
-
-laporan.splice(i,1);
-localStorage.setItem("laporan", JSON.stringify(laporan));
-renderLaporan();
-}
-
-/* DANA */
-function renderDana(){
-
-let container = document.getElementById("listDana");
-container.innerHTML = "";
-
-dana.forEach(d=>{
-
-container.innerHTML += `
-<div class="card">
-<h3>${d.judul}</h3>
-<p>Rp ${Number(d.jumlah).toLocaleString()}</p>
-<img src="${d.bukti}">
-</div>
-`;
+["home","dashboard","lapor","data","dana","login","help"].forEach(id=>{
+document.getElementById(id).classList.add("hidden");
 });
 
-updateDashboard();
+document.getElementById(page).classList.remove("hidden");
+
+if(event){
+document.querySelectorAll(".menu").forEach(m=>{
+m.classList.remove("active");
+});
+event.target.classList.add("active");
 }
+
+window.scrollTo({top:0, behavior:"smooth"});
+} 
+
+function revealOnScroll(){
+    let reveals = document.querySelectorAll(".reveal");
+
+    reveals.forEach(el=>{
+        let windowHeight = window.innerHeight;
+        let elementTop = el.getBoundingClientRect().top;
+
+        if(elementTop < windowHeight - 100){
+            el.classList.add("active");
+        }
+    });
+}
+
+window.addEventListener("scroll", revealOnScroll);
+
+function hapusDana(i){
+    dana.splice(i,1);
+    saveData();
+    renderDana();
+    updateDashboard();
+    showToast("Dana dihapus");
+} SCRIPT.JS
